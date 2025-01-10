@@ -4,7 +4,7 @@ This repository contains necessary scripts to run **rStar**'s generator and disc
 
 > Link to paper: https://huggingface.co/papers/2408.06195, https://arxiv.org/abs/2408.06195 
 
-## Intro 
+## Introduction
 
 We propose **rStar**, a **S**elf-play mu**T**u**A**l **R**easoning approach that significantly improves reasoning capabilities of small language models (SLMs) without fine-tuning or superior models. rStar decouples reasoning into a self-play mutual generation-discrimination process.
 
@@ -74,6 +74,13 @@ Extensive experiments across five SLMs demonstrate rStar can effectively solve d
   <img src="assets/result.png" width="600px">
 </p>
 
+## Effective Use and Ethical Considerations for rStar
+
+- Operational factors for rStar include selecting appropriate language models, defining reasoning tasks, and adjusting the number of MCTS rollouts for balance between accuracy and computational cost. End users can customize the system by choosing different SLMs based on their specific needs and by setting the complexity of reasoning tasks. These choices impact rStar’s behavior in terms of accuracy and resource usage.
+
+- We strongly recommend users apply Responsible AI (RAI) safety filters when using rStar to ensure outputs align with ethical standards and avoid unintended or harmful results. These filters can help detect and mitigate potential risks related to biases, safety, and compliance. 
+
+- We do not recommend using rStar in commercial or real-world applications without further testing and development. It is being released for research purposes. 
 
 ## Citation
 
