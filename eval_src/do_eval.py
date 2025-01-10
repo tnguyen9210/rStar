@@ -1,3 +1,5 @@
+# Licensed under the MIT license.
+
 import sys
 
 sys.path.append(".")
@@ -35,7 +37,7 @@ def extract_trace(data_item, num_votes):
     return res
 
 
-def extrace_completions(data_item):
+def extract_completions(data_item):
     res = []
     for item in data_item:
         res.append(data_item[item]["model_solution"])
@@ -77,7 +79,7 @@ def eval_exp(exp_dir: str, dataset_name: str, num_votes: int = -1):
         #     print(f"Error in {example_id}")
 
     # Calculate accuracy
-    accuracy = sum([item["accuracy"] for item in data_list]) / len(data_list)
+    accuracy = sum([item["correct"] for item in data_list]) / len(data_list)
     print(f"accuracy: {accuracy}")
 
     # Save eval results
