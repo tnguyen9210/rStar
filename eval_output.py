@@ -12,13 +12,13 @@ from typing import Any, Dict, Type, Optional, List, Tuple
 from pydantic import BaseModel
 from omegaconf import OmegaConf
 from tqdm import tqdm
-from rstar.constants import (
+from rstar_deepthink.constants import (
     NO_VALID_CHILD, 
     TOO_MANY_STEPS, 
     TOO_MANY_CODE_ERRORS, 
 )
-from rstar.config import BaseConfig
-from rstar.agents.utils import math_equiv
+from rstar_deepthink.config import BaseConfig
+from rstar_deepthink.agents.utils import math_equiv
 
 
 class InferNode(BaseModel):

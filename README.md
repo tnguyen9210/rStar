@@ -19,7 +19,7 @@ Authors: [Xinyu Guan](https://gxy-2001.github.io/)\*, [Li Lyna Zhang](https://ww
 </p>
 
 ## News 
-- **[01/15/2025]** Our code has been open-sourced.
+- **[01/17/2025]** Our code has been open-sourced.
 - **[01/09/2025]** Our paper is released: https://huggingface.co/papers/2501.04519.
 
 
@@ -77,9 +77,11 @@ This will help prevent the error: undefined symbol: __nvJitLinkComplete_12_4, ve
 
 ### Generate Training Data 
 
-#### From Teacher Model
 
-You may choose to use the following command to generate train data. Please ensure that sufficient GPU memory is allocated for the model, and modify the `CUDA_VISIBLE_DEVICES` as well as the `llm_gpu_memory_utilization` and `tp` parameters in the configuration file. This corresponds to round 1 in the paper.
+
+#### Bootstrapping round 
+
+You may choose to use the following command to generate train data. Please ensure that sufficient GPU memory is allocated for the model, and modify the `CUDA_VISIBLE_DEVICES` as well as the `llm_gpu_memory_utilization` and `tp` parameters in the configuration file.
 
 ```bash
 MODEL="deepseek-ai/DeepSeek-Coder-V2-Instruct"  
@@ -88,9 +90,9 @@ CFG="config/sample_mcts.yaml"
 CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" python main.py --qaf $QAF --custom_cfg $CFG --model_dir $MODEL
 ```
 
-#### From rStar Policy Model and Reward Model
+#### Round2-4: From rStar Policy Model and Reward Model
 
-If you have already trained the SFT model and the reward model, you can use the following command to generate higher-quality training data. This corresponds to rounds 2-4 in the paper.
+After training the policy and reward models, use this command to generate enhanced training data.
 
 ```bash
 MODEL="policy model dir"  
@@ -104,7 +106,7 @@ CUDA_VISIBLE_DEVICES="0" python main.py --qaf $QAF --custom_cfg $CFG --model_dir
 
 #### MCTS Inference with Policy Model and Reward Model
 
-Running the following command will allow you to reproduce the results presented in our main table. For each run, we select the trajectory based on the highest score of the entire response. There is an example of a run in `run_example.sh.`
+To reproduce the results in our main table, run the provided command. For each run, the trajectory is selected based on the highest overall response score. See run_example.sh for a sample execution.
 
 ```bash
 MODEL="policy model dir"
@@ -114,7 +116,7 @@ CFG="config/sft_eval_mcts.yaml"
 CUDA_VISIBLE_DEVICES="0" python main.py --qaf $QAF --custom_cfg $CFG --model_dir $MODEL --reward_model_dir $RM
 ```
 
-Running the above command will consume a significant amount of GPU time. A practical strategy is to slightly reduce the values of the `n_generate_sample` and `iterations` parameters, for example, lowering them to 16 and 8 respectively, which can still yield satisfactory results. Another approach is to replace MCTS with step beam search. We have tested this method and found it to be more efficient in terms of search speed, although it may slightly compromise accuracy compared to MCTS. Please try using the following command to implement this strategy.
+Executing the command or further increasing the number of nodes may lead to enhanced performance, but it would also require a considerable amount of GPU resources. To optimize, consider reducing `n_generate_sample` and `iterations` to 16 and 8, respectively, which still delivers satisfactory results. Alternatively, replacing MCTS with step beam search improves search speed, though with a slight accuracy trade-off. Use the following command to implement this strategy.
 
 ```bash
 MODEL="policy model dir"
@@ -125,7 +127,7 @@ CUDA_VISIBLE_DEVICES="0" python main.py --qaf $QAF --custom_cfg $CFG --model_dir
 ```
 
 
-#### Greedy Decode with Policy Model
+#### Greedy Decoding with Policy Model (SFT Pass@1 accuracy)
 
 Running the following command will generate the results using Greedy Decode.
 
@@ -136,7 +138,7 @@ CFG="config/sft_eval_greedy.yaml"
 CUDA_VISIBLE_DEVICES="0" python main.py --qaf $QAF --custom_cfg $CFG --model_dir $MODEL
 ```
 
-We have encapsulated the evaluation process, allowing for the convenient generation of greedy decode results by simply specifying the following tasks: `gsm8k`, `math`, `math500`, `aime2024`, `amc23`, `collegemath`, `gaokao2023en`, `olympiadbench`, and `omni-math`. By default, the result files will be stored in the same directory as the model.
+We've streamlined the evaluation process, enabling easy generation of greedy decode results for tasks like `gsm8k`, `math`, `math500`, `aime2024`, `amc23`, `collegemath`, `gaokao2023en`, `olympiadbench`, and `omni-math`. Results are saved in the model's directory by default.
 
 ```bash
 # same effect
@@ -149,11 +151,9 @@ python eval_output.py --file_path $MODEL"/amc23.jsonl"
 
 ### Fine-tune the Policy Model and Reward Model
 
-The training script below documents the parameters I used for training the model. These parameters are configured by default for 8*mi300x GPUs. Considering that most users are likely working with NVIDIA GPUs that have smaller VRAM capacities, please reduce the per_device_train_batch_size and correspondingly increase the gradient_accumulation_steps when running the script.
+The training script is configured for 8*mi300x GPUs by default. For users with NVIDIA GPUs with limited VRAM, reduce `per_device_train_batch_size` and increase `gradient_accumulation_steps` accordingly. You can also enable `flash_attention_2` with the `--attn_impl flash_attention_2` flag, which maintains similar accuracy to the `eager` implementation.
 
-Additionally, you can utilize flash_attention_2 by adding the flag --attn_impl flash_attention_2. I have compared the results of using `flash_attention_2` with the `eager` implementation, and the models trained with both methods exhibit similar levels of accuracy.
-
-The files `train/sft_data_examples.json` and `train/rm_data_examples.json` contain examples of the training data. We plan to open-source the complete training dataset in the near future, so stay tuned for updates!
+Example training data is available in `train/sft_data_examples.json` and `train/rm_data_examples.json`. The full dataset will be open-sourced soon—stay tuned!
 
 **SFT Train Script**
 ```bash

@@ -9,9 +9,9 @@ import argparse
 from tqdm import tqdm
 from datetime import datetime
 from omegaconf import OmegaConf
-from rstar.agents import BS, MCTS
-from rstar.solver import Solver
-from rstar.config import BaseConfig
+from rstar_deepthink.agents import BS, MCTS
+from rstar_deepthink.solver import Solver
+from rstar_deepthink.config import BaseConfig
 
 torch.set_num_threads(12)
 os.environ["TOKENIZERS_PARALLELISM"] = "false"

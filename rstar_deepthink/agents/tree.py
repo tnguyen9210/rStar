@@ -9,10 +9,10 @@ from typing import Optional, Any, Dict, List, Callable, Type, Tuple, Union
 from pydantic import BaseModel, PrivateAttr, conlist, ConfigDict, field_validator
 from omegaconf import DictConfig, OmegaConf
 from timeout_decorator import timeout
-from rstar.config import BaseConfig
-from rstar.nodes.base_node import BaseNode
-from rstar.tools.python_tool import PythonInterpreter
-from rstar.constants import TIMEOUT_SECONDS, TIMEOUT_MESSAGE, CODE_END, OUTPUT_END, CODE, ANSWER
+from rstar_deepthink.config import BaseConfig
+from rstar_deepthink.nodes.base_node import BaseNode
+from rstar_deepthink.tools.python_tool import PythonInterpreter
+from rstar_deepthink.constants import TIMEOUT_SECONDS, TIMEOUT_MESSAGE, CODE_END, OUTPUT_END, CODE, ANSWER
 
 
 def _python_ast_init():

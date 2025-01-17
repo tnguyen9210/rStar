@@ -2,7 +2,7 @@
 # Licensed under the MIT license.
 import os, sys
 import torch
-from rstar.llms.rm import *
+from rstar_deepthink.llms.rm import *
 from transformers import AutoConfig, AutoTokenizer
 from vllm import LLM, SamplingParams
 

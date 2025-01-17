@@ -6,10 +6,10 @@ from termcolor import colored
 from typing import Dict, Any, Optional, Type, List, Tuple, Callable, Union
 from pydantic import field_validator
 from vllm.outputs import CompletionOutput, RequestOutput
-from rstar.agents.utils import math_equiv as is_equiv
-from rstar.nodes.base_node import BaseNode
-from rstar.nodes import MCTSNode
-from rstar.constants import (
+from rstar_deepthink.agents.utils import math_equiv as is_equiv
+from rstar_deepthink.nodes.base_node import BaseNode
+from rstar_deepthink.nodes import MCTSNode
+from rstar_deepthink.constants import (
     TOO_MANY_CODE_ERRORS, 
     TOO_MANY_STEPS, 
     NO_VALID_CHILD, 

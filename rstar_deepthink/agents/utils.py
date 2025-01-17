@@ -4,9 +4,9 @@
 from __future__ import annotations
 from typing import List, Dict, Any, Optional, Type, Tuple, Union
 from math_evaluation import is_equiv
-from rstar.prompts.prompt_rstar import PROMPT_RSTAR
-from rstar.tools.python_tool import PythonInterpreter
-from rstar.constants import *
+from rstar_deepthink.prompts.prompt_rstar import PROMPT_RSTAR
+from rstar_deepthink.tools.python_tool import PythonInterpreter
+from rstar_deepthink.constants import *
 from utils.math_equal import math_equal
 from utils.checker import check_one_answer
 from utils.util import equiv, strip_string, choice_answer_clean
