@@ -1,7 +1,7 @@
 mode: "mcts"          
-model_dir: "/mnt/teamdrive/model/DeepSeek-Coder-V2-Instruct"
-few_shot_path: "./rstar/few_shots/few_shots.json"
-prompt_path: "./rstar/few_shots/mcts_prompt.json" 
+model_dir: ""
+few_shot_path: "./rstar_deepthink/few_shots/few_shots.json"
+prompt_path: "./rstar_deepthink/few_shots/mcts_prompt.json" 
 swap_space: 16
 temperature: 0.7
 errors_threshold: 2   # most allowed consecutive python errors

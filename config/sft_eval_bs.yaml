@@ -1,7 +1,7 @@
 mode: "bs"          
 model_dir: ""
-few_shot_path: "./rstar/few_shots/few_shots.json"
-prompt_path: "./rstar/few_shots/sft_prompt.json" 
+few_shot_path: "./rstar_deepthink/few_shots/few_shots.json"
+prompt_path: "./rstar_deepthink/few_shots/sft_prompt.json" 
 swap_space: 12
 temperature: 1
 errors_threshold: 1   # most allowed consecutive python errors

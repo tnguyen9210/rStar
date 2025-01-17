@@ -31,3 +31,8 @@ for ((gpu_id=0; gpu_id<NUM_GPU; gpu_id++))
 do
     run_task $gpu_id $RUNS_PER_GPU &
 done
+
+
+# Our final score is determined by a majority vote on the top K highest-reward trajectories.
+# K is usually set between 4 and 8. Run the command to see the results. For other parameters, please refer to the code.
+python eval_maj.py --path $QAF/rollout --top_n 4

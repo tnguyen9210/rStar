@@ -106,7 +106,7 @@ CUDA_VISIBLE_DEVICES="0" python main.py --qaf $QAF --custom_cfg $CFG --model_dir
 
 #### MCTS Inference with Policy Model and Reward Model
 
-To reproduce the results in our main table, run the provided command. For each run, the trajectory is selected based on the highest overall response score. See run_example.sh for a sample execution.
+To reproduce the results in our main table, run the provided command will yield a mcts result file. For each run, a trajectory is selected based on the highest overall response score. Refer to `run_example.sh` for a demonstration of executing multiple trajectories. Our final score is determined by a majority vote on the top K highest-reward trajectories.
 
 ```bash
 MODEL="policy model dir"
@@ -141,10 +141,9 @@ CUDA_VISIBLE_DEVICES="0" python main.py --qaf $QAF --custom_cfg $CFG --model_dir
 We've streamlined the evaluation process, enabling easy generation of greedy decode results for tasks like `gsm8k`, `math`, `math500`, `aime2024`, `amc23`, `collegemath`, `gaokao2023en`, `olympiadbench`, and `omni-math`. Results are saved in the model's directory by default.
 
 ```bash
-# same effect
 MODEL="policy model dir"
 python eval.py --model "$MODEL" --device 0 --task amc23 
-# eval inference result
+# evaluate a result file
 python eval_output.py --file_path $MODEL"/amc23.jsonl"
 ```
 
@@ -153,7 +152,7 @@ python eval_output.py --file_path $MODEL"/amc23.jsonl"
 
 The training script is configured for 8*mi300x GPUs by default. For users with NVIDIA GPUs with limited VRAM, reduce `per_device_train_batch_size` and increase `gradient_accumulation_steps` accordingly. You can also enable `flash_attention_2` with the `--attn_impl flash_attention_2` flag, which maintains similar accuracy to the `eager` implementation.
 
-Example training data is available in `train/sft_data_examples.json` and `train/rm_data_examples.json`. The full dataset will be open-sourced soon—stay tuned!
+Example training data is available in `train/sft_data_examples.json` and `train/rm_data_examples.json`. For SFT, we typically select the two traces with the highest average scores from MCTS. For PPM training, we pair the highest-scoring correct solution with the lowest-scoring incorrect one.
 
 **SFT Train Script**
 ```bash
