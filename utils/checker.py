@@ -62,13 +62,6 @@ def check_answer(ex_answer, gt_answer, is_remove_angle_brackets=False):
     flag = equiv(ex_answer, gt_answer) or latex_answer_check(
         ex_answer, gt_answer, None, None, eval_policy="aggressive"
     )
-    if not flag:
-        if is_float(gt_answer) or is_float(ex_answer):
-            try:
-                if extract_only_number(gt_answer) == extract_only_number(ex_answer):
-                    flag = False
-            except:
-                flag = False
     return flag
 
 def check_one_answer(ex_answer, gt_answer):
