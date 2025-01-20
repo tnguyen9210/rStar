@@ -165,6 +165,7 @@ class Solver(BaseModel):
     
 
     def save_intermediate_metric(self, path: str, agents: List[MCTS], rollout) -> None:
+        if self.config.is_sampling: return
         states = [s.intermediate_metric for s in agents]
         statics = []
         for i in range(rollout + 1):
