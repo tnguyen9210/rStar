@@ -20,11 +20,10 @@ def seed_torch(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed) # if you are using multi-GPU.
+    torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     set_seed(seed)
-
     torch.use_deterministic_algorithms(True)
 seed_torch(0)
 
@@ -87,16 +86,9 @@ if __name__ == "__main__":
         if remain_args.test_pair_json_path is not None:
             raw_datasets['test'] = load_dataset('json', data_files=remain_args.test_pair_json_path)['train']
         else:
-            # raw_datasets['test'] = raw_datasets['train'].select(random.sample(range(len(raw_datasets['train'])), 100))
             raw_datasets['train'], raw_datasets['test'] = raw_datasets['train'].train_test_split(test_size=0.05, seed=42).values()
             rank0_print(rank, 'trainset size:', len(raw_datasets['train']), 'testset size:', len(raw_datasets['test']))
-    # debug
-    # sample 1000
-    # raw_datasets['train'] = raw_datasets['train'].select(range(500))
-    # raw_datasets['test'] = raw_datasets['test'].select(range(1600))
 
-
-    # Preprocess the dataset and filter out examples that are longer than args.max_length
     remove_columns = ['prompt', 'neg', 'pos', 'neg_count', 'pos_count']
     remove_columns = [col for col in remove_columns if col in raw_datasets['train'].column_names]
     partial_func = partial(preprocess_value_dataset, tokenizer=tokenizer, max_length=config.max_length)
@@ -105,12 +97,8 @@ if __name__ == "__main__":
         batched=True,
         num_proc=16,
         remove_columns=remove_columns
-    ) # preprocess.map if return dict, it will add new columns but not remove old columns
+    ) 
     rank0_print(rank, 'after preprocess', raw_datasets['train'].column_names)
-    # raw_datasets = raw_datasets.filter(
-    #     # lambda x: len(x["input_ids_chosen"]) <= config.max_length and len(x["input_ids_rejected"]) <= config.max_length
-    #     lambda x: len(x["input_ids"]) <= config.max_length
-    # )
     train_dataset = raw_datasets["train"]
     eval_dataset = raw_datasets["test"]
     rank0_print(rank, 'After filtering, trainset size:', len(train_dataset), 'testset size:', len(eval_dataset))
