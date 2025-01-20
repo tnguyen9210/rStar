@@ -19,9 +19,11 @@ Authors: [Xinyu Guan](https://gxy-2001.github.io/)\*, [Li Lyna Zhang](https://ww
 </p>
 
 ## News 
-- **[01/17/2025]** Our code has been open-sourced.
+- **[01/21/2025]** Our code has been open-sourced. 
 - **[01/09/2025]** Our paper is released: https://huggingface.co/papers/2501.04519.
 
+
+Note: Our prior work [Mutual Reasoning Makes Smaller LLMs Stronger Problem-Solvers](https://huggingface.co/papers/2408.06195) is open-sourced on the `rStar-mutualreasoning` branch.
 
 
 
@@ -30,8 +32,6 @@ Authors: [Xinyu Guan](https://gxy-2001.github.io/)\*, [Li Lyna Zhang](https://ww
 - [Setup](#Setup)
 - [Usage](#Usage)
 - [Citation](#Citation)
-- [Acknowledgement](#Acknowledgement)
-
 
 
 ## Introduction
@@ -77,7 +77,7 @@ This will help prevent the error: undefined symbol: __nvJitLinkComplete_12_4, ve
 
 ### Generate Training Data 
 
-
+Our training data is sourced from [NuminaMath](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT) and [MetaMath](https://huggingface.co/datasets/meta-math/MetaMathQA). To generate your own data, reformat questions and answers into the [eval_data](eval_data/aime2024_test.json) format.
 
 #### Bootstrapping round 
 
