@@ -332,12 +332,7 @@ if __name__ == '__main__':
     total = len(solutions)
     cnt = sum(solutions)
     print(cnt, total, f"Pass 1 : {cnt / total}")
-    # output_ct, output_ct_gt, error_ct = 0, 0, 0
-    # assert len(final_answer_traces) == len(solutions), "tags should be the same length as solutions"
-    # for i in range(len(final_answer_traces)):
-    #     if final_answer_traces[i].lower().count("error") >= 1:
-    #         error_ct += 1
-    # print(error_ct, f"Error {error_ct / total}")
+
     jud = 0
     for item in judges:
         if item: jud += 1 

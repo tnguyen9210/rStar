@@ -166,7 +166,6 @@ def preprocess_value_dataset(
     tokenizer,
     max_length=2048,
 ):
-    # build inputs with format `<bos> X ` and labels with format `X <eos> `
     model_inputs = {"pos_input_ids": [], "pos_attention_mask": [], "neg_input_ids": [], "neg_attention_mask": [], 
                     "pos_labels": [], "neg_labels": [],"factor": []}
 
