@@ -77,7 +77,7 @@ This will help prevent the error: undefined symbol: __nvJitLinkComplete_12_4, ve
 
 ### Generate Training Data 
 
-Our training data is sourced from [NuminaMath](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT) and [MetaMath](https://huggingface.co/datasets/meta-math/MetaMathQA). To generate your own data, reformat questions and answers into the [eval_data](eval_data/aime2024_test.json) format.
+Most of the math problems are sourced from [NuminaMath](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT) and [MetaMath](https://huggingface.co/datasets/meta-math/MetaMathQA). To generate your own data, reformat questions and answers into the [eval_data](eval_data/aime2024_test.json) format.
 
 #### Bootstrapping round 
 
