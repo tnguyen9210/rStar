@@ -103,6 +103,36 @@ CFG="config/sft_sample_mcts.yaml"
 CUDA_VISIBLE_DEVICES="0" python main.py --qaf $QAF --custom_cfg $CFG --model_dir $MODEL --reward_model_dir $RM
 ```
 
+### Extracting SFT and RM Training Data
+We provide scripts to extract the complete trace from MCTS data, which can be used for both data analysis and the construction of training datasets for Supervised Fine-Tuning and Reward Modeling.
+
+#### Extract SFT Training Data
+Run the following command to extract the complete trace from your MCTS data directory, this command collects all the detailed information from the MCTS runs, which is useful for further analysis or to prepare data for training:
+
+```bash
+python extra_sft_file.py --data_dir "MCTS file dir" --output_file "sft_extra_result.jsonl"
+```
+
+you can sample the data to create a dataset for SFT training by running:
+
+```bash
+python train/sample_sft_data.py --data_file "sft_extra_result.jsonl" --output_file "sft.json" --n 2
+```
+
+#### Extract RM Training Data
+
+Run the following command to extract all step-level pair preference data from your MCTS files.
+
+```bash
+python extra_rm_file.py --data_dir "MCTS file dir" --output_file "rm_extra_result.jsonl"
+```
+
+sample the data for Reward Modeling:
+
+```bash
+python train/sample_rm_data.py --data_file "rm_extra_result.jsonl" --output_file "rm.json"
+```
+
 ### Inference & Evaluation
 
 #### MCTS Inference with Policy Model and Reward Model
