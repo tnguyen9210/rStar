@@ -19,6 +19,7 @@ Authors: [Xinyu Guan](https://gxy-2001.github.io/)\*, [Li Lyna Zhang](https://ww
 </p>
 
 ## News 
+- **[02/10/2025]** We are hiring interns! If you are interested in improving LLM reasoning, please send your CV to lzhani@microsoft.com.
 - **[01/21/2025]** Our code has been open-sourced. 
 - **[01/09/2025]** Our paper is released: https://huggingface.co/papers/2501.04519.
 
