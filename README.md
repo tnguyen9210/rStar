@@ -123,13 +123,13 @@ python train/sample_sft_data.py --data_file "sft_extra_result.jsonl" --output_fi
 Run the following command to extract all step-level pair preference data from your MCTS files.
 
 ```bash
-python extra_rm_file.py --data_dir "MCTS file dir" --output_file "rm_extra_result.json"
+python extra_rm_file.py --data_dir "MCTS file dir" --output_file "rm_extra_result.jsonl"
 ```
 
 sample the data for Reward Modeling:
 
 ```bash
-python train/sample_rm_data.py --data_file "rm_extra_result.json" --output_file "rm.json"
+python train/sample_rm_data.py --data_file "rm_extra_result.jsonl" --output_file "rm.json"
 ```
 
 ### Inference & Evaluation
