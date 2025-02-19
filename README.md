@@ -256,7 +256,7 @@ accelerate launch --num_processes=8 train/train_RM.py \
 
 ```
 
-# Convert to RM Format
+**Convert to RM Format**
 
 Run the command below to convert the RM format.
 
