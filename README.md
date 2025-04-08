@@ -133,6 +133,16 @@ sample the data for Reward Modeling:
 python train/sample_rm_data.py --data_file "rm_extra_result.jsonl" --output_file "rm.json"
 ```
 
+
+### Open-Source Training Datasets
+
+We have released our SFT training data and PPM training data, which you can directly use to reproduce our results:
+
+[SFT-Trainset](https://huggingface.co/datasets/ElonTusk2001/rstar_sft)
+
+[PPM-Trainset](https://huggingface.co/datasets/ElonTusk2001/rstar_ppm)
+
+
 ### Inference & Evaluation
 
 #### MCTS Inference with Policy Model and Reward Model
