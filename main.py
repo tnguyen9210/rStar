@@ -40,18 +40,28 @@ def batch(iterable, n=-1):
         yield iterable[ndx: min(ndx + n, l)]
 
 def parse_args():
+    base_dir = '/groups/kjun/tnn/datasets/'
+    
+    # dataset path
+    data_dir = base_dir + "/prm800k/math_splits"
+
+    llm_tokenizer_dir = base_dir + "/Llama-3.2-1B-Instruct"
+    prm_tokenizer_dir = base_dir + "/Llama3.1-8B-PRM-Deepseek-Data"
+    
     args = argparse.ArgumentParser()
     args.add_argument('--custom_cfg', type=str, default="config/sft_eval_mcts.yaml")
-    args.add_argument("--qaf", type=str, default="", help="quesuion and answer file")
-    args.add_argument('--model_dir', type=str, default="") 
-    args.add_argument('--reward_model_dir', type=str, default="") 
-    args.add_argument('--save_in_model', type=str, default="")
+    args.add_argument("--qaf", type=str, default="eval_data/math500_test.json", help="quesuion and answer file")
+    args.add_argument('--model_dir', type=str, default=f"{llm_tokenizer_dir}") 
+    args.add_argument('--reward_model_dir', type=str, default=f"{prm_tokenizer_dir}") 
+    args.add_argument('--save_in_model', type=str, default="results/")
     args = args.parse_args()
     return args
 
 
 if __name__ == '__main__':
     args = parse_args()
+    print(args)
+    stop
 
     config = OmegaConf.structured(BaseConfig)
     if args.custom_cfg:
@@ -67,6 +77,7 @@ if __name__ == '__main__':
     llm_version = os.path.basename(config.model_dir.rstrip("/"))
 
     data = load_qaf(args.qaf)
+    data = data[:10]
     solver = Solver(config=config)
 
     # init agent
@@ -78,6 +89,9 @@ if __name__ == '__main__':
         raise NotImplementedError
     if args.reward_model_dir:
         llm_version += "." + args.reward_model_dir.split("/")[-1]
+
+    print(llm_version)
+    stop
         
     saved_jsonl_file = f"{args.qaf}.{config.mode}.{llm_version}.{datetime.now().strftime('%Y%m%d%H%M%S')}.jsonl" 
     
