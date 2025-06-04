@@ -1,0 +1,34 @@
+[
+    [
+        {
+            "rollout": 0,
+            "pass1": 0,
+            "passn": 0,
+            "len": 1
+        },
+        {
+            "rollout": 1,
+            "pass1": 0,
+            "passn": 0,
+            "len": 1
+        }
+    ],
+    [
+        {
+            "question": "Simplify $\\sqrt{242}$.",
+            "gt": "11\\sqrt2",
+            "answers": [
+                "First, we will write the given number in the form p-qr where p is the largest perfect square that divides 242 and q is the remaining number. **Use reduce() function from math module in python**\n```\nimport math\ns=math.sqrt(242)\np=math.floor(s square)\nq=s-squared\nprint(p,q)\n```\nWe will now calculate the square root of 242. That will give us the largest perfect square equal to 242. We will then use the remaining number in the similar way"
+            ],
+            "judgements": [
+                false
+            ],
+            "value_estimate": [
+                2.1814066712977365e-05
+            ],
+            "rollout_indexs": [
+                0
+            ]
+        }
+    ]
+]
