@@ -56,11 +56,22 @@ class MCTS(BS):
         # select a child node
         node = start_node
         if node is None: return None
-        if node.has_children() or node.is_terminal:
+
+        # Start from the current_node, explore thee non-terminal children with UCT 
+        # Note: This step is different from the Mario code, where the selection process always starts from the root.
+        if node.has_children() or node.is_terminal: # an potentiall error here "or node.is_terminal" may not be correct, 
+                                                    #    should be "and not node.is_terminal"?
             next_node = self.select_child(node)     # To encourage exploration, select from non-terminal children
             if next_node is None:                   # if None，it mean all children are terminal
-                node.is_terminal = True
+                node.is_terminal = True             #    if all children are terminal then the node is terminal??
+                                                    # Does it miss a "break" here?
             node = next_node
+
+        # The selected node is None if 
+        #   (i) it is a terminal node
+        #   (ii) or all of its childrens are terminal nodes
+        # The selected node is not None if 
+        #   it is a non-terminal leaf node that have no children 
         return None if (node is None or node.is_terminal) else node
 
     def select_child(self, node: Type[MCTSNode]) -> Optional[Type[MCTSNode]]:
@@ -174,6 +185,8 @@ class MCTS(BS):
 
 
     def select_next_step(self, outputs=None, from_root=False) -> None:
+        # If self.current_nodes is None (i.e., cannot select next node for exploration), the current rollout stops 
+        # What’s a better way to describe the cases where this happens?
         self.search_node = self.current_nodes[0] if self.current_nodes else None
         self.current_nodes = []
         if outputs:
@@ -185,18 +198,22 @@ class MCTS(BS):
                     candidate_node.is_terminal = True
 
                 # backup
+                # TOO_MANY_CODE_ERRORS = "Too many consecutive steps have code errors."
+                # TOO_MANY_STEPS = "Fail to sove the problem within limited steps."
+                # NO_VALID_CHILD = "Fail to generate parsable text for next step."
+                # where is candidate_node.state["final_answer"] computed? 
                 if candidate_node.is_terminal and candidate_node.state["final_answer"]:
                     # for terminal node: update_recursive
                     if candidate_node.state["final_answer"] in [NO_VALID_CHILD, TOO_MANY_STEPS, TOO_MANY_CODE_ERRORS]:
                         candidate_node.update(self.config.negative_reward)
                     else:
-                        # save intermediate metric
+                        # save intermediate metric. what does this step actually do?
                         self.record_intermediate_metric(answer=candidate_node.state["final_answer"], value_estimate=value_estimate)
 
                         candidate_node.update_recursive(value_estimate, self.root)
                 else:
                     # for intermediate node: just update the value
-                    if self.config.terminal_sample:
+                    if self.config.terminal_sample: # Always False
                         pass
                     else:
                         candidate_node.update(value_estimate)
@@ -204,6 +221,13 @@ class MCTS(BS):
                 if self.__class__.is_valid_final_answer_node(candidate_node):
                     self.final_answer_nodes.append(candidate_node)
         selection_node = self.selection(from_root=from_root)
+
+        # The selected node is None if 
+        #   (i) it is a terminal node
+        #   (ii) or all of its childrens are terminal nodes
+        # The selected node is not None if 
+        #   it is a non-terminal leaf node that have no children 
+        # If the selected node is None, there is no further exploration, the current rollout stops 
         if selection_node is not None:
             self.current_nodes.append(selection_node)
     
@@ -214,11 +238,15 @@ class MCTS(BS):
             value_estimate = output.value_estimate
             if value_estimate is not None:  
                 self.expand_node(output.outputs, current_node)
-            else:
+            else:   # when does it happen? 
+                print("generate_next_step value_estimate is None")
+                print(current_node)
                 value_estimate = self.config.negative_reward
                 current_node.is_terminal = True
 
-            if self.config.update_leaf_value:
+            # update leaf nodes 
+            # add new generated nodes (not already children and have visitation less than one) as children of current node
+            if self.config.update_leaf_value:           # True 
                 # if need update leaf node value, just append the node to candidate_nodes, will update the value in select_next_step()
                 for value_node in current_node.children:
                     if value_node not in self.candidate_nodes and value_node.visit_count() < 1:

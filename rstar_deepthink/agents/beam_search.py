@@ -90,6 +90,10 @@ class BS(BaseTree):
         if is_value_only, the prompt is used to produce value estimate.
         """
         prompts = []
+        print("current_nodes")
+        print(self.current_nodes)
+        print("candidate_nodes")
+        print(self.candidate_nodes)
         current_nodes = self.candidate_nodes if is_value_only else self.current_nodes
         for current_node in current_nodes:
             if not is_value_only and self.is_ignored_node(current_node):
@@ -110,6 +114,7 @@ class BS(BaseTree):
     
     @staticmethod
     def is_valid_final_answer_node(node: Type[BaseNode]) -> bool:
+        # where can we compute node.state["final_answer"]?
         if node.is_terminal and node.state["final_answer"] and \
            node.state["final_answer"] not in [NO_VALID_CHILD, TOO_MANY_STEPS, TOO_MANY_CODE_ERRORS]:
             return True

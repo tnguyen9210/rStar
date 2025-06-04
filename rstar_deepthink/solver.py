@@ -91,23 +91,25 @@ class Solver(BaseModel):
     def generate_preprocess(self, agents):
         prompts = []
         rewards = []
-        prompts_span = [0]
-        valid_agents = []
-        invalid_agents = []
-        expanded_agents = []
+        prompts_span = [0]        # note: each agent represents a search for a question
+        valid_agents = []         # agents for the next expansion
+        invalid_agents = []       # agents that have already built their trees, no more searching
+        expanded_agents = []      # agents that have nodes that already expanded, skipping expansion, just do selection step
 
         for agent in agents:
-            if agent.should_generate_next():
-                if agent.has_expanded():
+            
+            if agent.should_generate_next(): # True if agent.current_nodes are not terminal node and their depths are less max_depth
+                if agent.has_expanded():     # True if agent.current_nodes has children -> already expanded
                     expanded_agents.append(agent)
                 else:
                     agent_prompts = agent.create_prompt()
                     rewards.extend(agent.get_rewards())
                     prompts.extend(agent_prompts)
                     prompts_span.append(prompts_span[-1] + len(agent_prompts))
-                    valid_agents.append(agent)
+                    valid_agents.append(agent)      
             else:
                 invalid_agents.append(agent)
+        # print(prompts)
         return prompts, prompts_span, valid_agents, invalid_agents, expanded_agents, rewards
 
 
@@ -116,13 +118,18 @@ class Solver(BaseModel):
         outputs: List[List[RequestOutput]], 
         valid_agents: List[BaseTree],
     ) -> List[BaseTree]:
+        '''
+        # update leaf nodes of the current_nodes
+        # add new generated nodes (not already a child and have visitation less than one) as children of the current_nodes
+        '''
+        
         post_agents = []
         #with ProcessPool(max_workers=min(len(valid_agents), os.cpu_count())) as pool:
         with ProcessPool(max_workers=12) as pool:
             future = pool.map(self.__class__.processor, valid_agents, outputs, timeout=TIMEOUT_SECONDS)
             iterator = future.result()
         
-        progress_bar = tqdm(total=len(valid_agents), desc="generate_postprocess")  
+        progress_bar = tqdm(total=len(valid_agents), desc="generate_postprocess", disable=True)  
         while True:
             try:
                 result = next(iterator)
@@ -136,6 +143,7 @@ class Solver(BaseModel):
         progress_bar.close() 
             
         # update agents
+        # why is this needed? it seems like post_agents are the same as valid_agents 
         updated_agents = [
             post_agent if post_agent is not None else valid_agent
             for post_agent, valid_agent in zip(post_agents, valid_agents)
@@ -147,9 +155,10 @@ class Solver(BaseModel):
         prompts = []
         prompts_span = [0]
         for agent in agents:
-            agent_prompts = agent.create_prompt(is_value_only=True)
+            agent_prompts = agent.create_prompt(is_value_only=True)   # 
             prompts.extend(agent_prompts)
             prompts_span.append(prompts_span[-1] + len(agent_prompts))
+        # print(agent_prompts)
         return prompts, prompts_span
     
     
@@ -158,6 +167,9 @@ class Solver(BaseModel):
         outputs, 
         valid_agents,
     ) -> List[BaseTree]:
+        '''
+        # select the next current_nodes for expansion
+        '''
         for agent, output in zip(valid_agents, outputs):
             if agent is not None:
                 self.selector(agent, output)
@@ -214,48 +226,153 @@ class Solver(BaseModel):
     def output(self, agents: List[BaseTree]):
         jsonlines = {}
         for i, agent in enumerate(agents):         
-            jsonlines[agent.question] = agent.return_states()
+            jsonlines[agent.question] = agent.return_states() # outputs all the nodes/states within the tree
         
         return jsonlines
     
     def solve(self, agents: List[BaseTree], saved_jsonl_file: str, cur_data: List[Dict[str, Any]]):
-        
-        for rollout in tqdm(range(self.max_agent_steps), desc="Rollout Processing"):
-            # Initialize the initial search starting point of agents, and the initial point of each rollout is root
+
+        # max_agent_steps is number of rollouts or simulations (default value is 12) 
+        for rollout in tqdm(range(self.max_agent_steps), desc="Rollout Processing", disable=True):
+            # Initialize the initial search starting point of agents, 
+            # and the initial point of each rollout is root
             for agent in agents:
-                agent.select_next_step(from_root=True)
+                agent.select_next_step(from_root=True)      # This code resets current_nodes = [root]
                 agent.rollout_idx = rollout
+                # print(agent.current_nodes)
 
             for step in range(self.config.max_depth):
                 print("-----------------Current Rollout: ", rollout, "-----------------")
                 print("-----------------Current Step: ", step, "-----------------")
-                prompts, prompts_span, valid_agents, invalid_agents, expanded_agents, valid_rewards = self.generate_preprocess(agents)
+
+                # print("\n-> current_agents")
+                # for agent in agents:
+                #     print(agent.current_nodes)
+
+                # step expansion
                 
+                # valid_agents: agents for the next expansion
+                # invalid_agents: agents that have already built their trees, no more searching
+                # expanded_agents: agents in which their current_nodes already have expanded (i.e., already have children), 
+                #     skipping expansion, just do selection step
+                #     In what cases can this occur?
+                
+                # example of prompt 
+                # "<|user|>:\nConvert the point $(0,3)$ in rectangular coordinates to polar coordinates.  Enter your answer in the form $(r,\\theta),$ where $r > 0$ and $0 \\le \\theta < 2 \\pi.$\n\n<|assistant|>: Let's think step by step and solve the problem with code."
+                
+                # The prompt seems lack of some information, i.e., system prompt      
+                # Here is a prompt template used in current experiment
+                # Note: The generation stops with the special stop tokens ["<end_of_step>", "<end_of_code>", "<end_of_answer>"] 
+                #  Todo: I have to check whether the current model Llama-3.2 has the these special stop tokens. 
+                """
+                <|start_header_id|>system<|end_header_id>
+
+                Cutting Knowledge Date: December 2023
+                Today Date: 26 Feb 2025
+        
+                Solve the following math problem efficiently and clearly:
+        
+                - For simple problems (2 steps or fewer):
+                Provide a concise solution with minimal explanation.
+        
+                - For complex problems (3 steps or more):
+                Use this step-by-step format:
+        
+                ## Step 1: [Concise description]
+                [Brief explanation and calculations]
+        
+                ## Step 2: [Concise description]
+                [Brief explanation and calculations]
+        
+                ...
+        
+                Regardless of the approach, always conclude with:
+        
+                Therefore, the final answer is: $\\boxed{answer}$. I hope it is correct.
+        
+                Where [answer] is just the final number or expression that solves the problem.
+                <|eot_id|>
+        
+                <|start_header_id|>user<|end_header_id>
+        
+                Convert the point $(0,3)$ in rectangular coordinates to polar coordinates.  
+                Enter your answer in the form $(r,\\theta),$ where $r > 0$ and $0 \\le \\theta < 2 \\pi.$
+                <|eot_id|>
+        
+                <|start_header_id|>assistant<|end_header_id>
+                """
+                
+                prompts, prompts_span, valid_agents, invalid_agents, expanded_agents, valid_rewards = self.generate_preprocess(agents)
+                # print("\n-> prompts")
+                # print(prompts)
+
+                # print("\n-> valid_agents")
+                # for agent in valid_agents:
+                #     print(agent.current_nodes)
+
+                # print("\n-> invalid_agents")
+                # for agent in invalid_agents:
+                #     print(agent.current_nodes)
+
+                # print("\n-> expanded_agents")
+                # for agent in expanded_agents:
+                #     print(agent.current_nodes)
+
+                # check if whether there are still agents that are valid for expansion or already expanded and need to do selection step 
                 if len(valid_agents + expanded_agents) < 1:
                     break
                 
-                # step expansion
+                
                 outputs = self.llm(prompts, self.generate_sampling_params)
+                # print("step_expansion outputs")
+                # print(outputs) # it does not seem to generate good solutions 
                 
                 for output, reward in zip(outputs, valid_rewards): # attach reward to prevent repeat rewarding
                     output.value_estimate = reward
                 reconstructed_outputs = [outputs[bos_idx : eos_idx] for bos_idx, eos_idx in zip(prompts_span, prompts_span[1:])]
                 
-                # process output and run python code
+                # process output 
+                # update leaf nodes of the current_nodes
+                # add new generated nodes (not already a child and have visitation less than one) as children of the current_nodes
                 valid_agents = self.generate_postprocess(reconstructed_outputs, valid_agents)
 
                 # step evaluation
+                
+                # what are the differences between this llm_prompts and rm_prompts?
+                #   - the prompt is a dictionary that contains a empty 'prefix' and 'text' which is the 'prompt' 
+                # why don't value/reward prompts contain the solution steps?
+                # todo: how does the prm model actually works?
+                
+                # example of prompts: 
+                # {'prefix': '', 'text': "<|user|>:\nConvert the point $(0,3)$ in rectangular coordinates to polar coordinates.  Enter your answer in the form $(r,\\theta),$ where $r > 0$ and $0 \\le \\theta < 2 \\pi.$\n\n<|assistant|>: Let's think step by step and solve the problem with code."} 
                 prompts, prompts_span = self.value_preprocess(valid_agents)
-                if self.need_value_func:
+                print(prompts)
+                
+                if self.need_value_func:  # always True 
+                    # todo: check how the reward model works
                     outputs = self.reward_model(prompts=prompts)
                     reconstructed_outputs = [outputs[bos_idx : eos_idx] for bos_idx, eos_idx in zip(prompts_span, prompts_span[1:])]
+                    # print(reconstructed_outputs)
                 else:
+                    # print("False")
                     reconstructed_outputs = [None] * (len(prompts_span) - 1)
                 
                 # selection
+                # select the next current_nodes for expansion
+                # if no further current nodes remain for exploration 
+                #     (i.e. the current_nodes consists a terminal node or its children are terminal nodes), 
+                #     the rollout is finished. 
                 valid_agents = self.value_postprocess(reconstructed_outputs, valid_agents)
                 expanded_agents = self.value_postprocess([None] * len(expanded_agents), expanded_agents) # for expanded agents, just do selection step
-                
+
+                # print("\n-> invalid_agents")
+                # for agent in invalid_agents:
+                #     print(agent.current_nodes)
+
+                # print("\n-> expanded_agents")
+                # for agent in expanded_agents:
+                #     print(agent.current_nodes)
+                    
                 # keep all agents
                 agents = valid_agents + invalid_agents + expanded_agents
 

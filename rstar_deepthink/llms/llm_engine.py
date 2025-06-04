@@ -17,7 +17,7 @@ def llm_init(config):
         gpu_memory_utilization=config.llm_gpu_memory_utilization,
         enforce_eager=True,
         distributed_executor_backend='ray' if config.tp > 1 else None,
-        dtype="bfloat16",
+        dtype="float16",
     )
     sampling_params = SamplingParams(
         temperature=config.temperature,
@@ -47,6 +47,7 @@ def rm_engine(config):
             enforce_eager=True,
             swap_space=0,
             gpu_memory_utilization=0.98 - config.llm_gpu_memory_utilization, # for qwen 7b, rm need 15G memory
+            dtype="float16",
         )
         
         v_head_state = torch.load(os.path.join(config.reward_model_dir, "value_head.bin"), weights_only=True)
