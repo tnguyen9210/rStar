@@ -92,14 +92,15 @@ class Solver(BaseModel):
         prompts = []
         rewards = []
         prompts_span = [0]        # note: each agent represents a search for a question
+                                  # what the prompts_span are actually used for? conjecture: keep track of the idxes of prompts
         valid_agents = []         # agents for the next expansion
         invalid_agents = []       # agents that have already built their trees, no more searching
         expanded_agents = []      # agents that have nodes that already expanded, skipping expansion, just do selection step
 
         for agent in agents:
-            
-            if agent.should_generate_next(): # True if agent.current_nodes are not terminal node and their depths are less max_depth
-                if agent.has_expanded():     # True if agent.current_nodes has children -> already expanded
+            if agent.should_generate_next(): # True if agent.current_nodes[0] is not terminal node and its depths is less max_depth
+                if agent.has_expanded():     # True if agent.current_nodes[0] has children -> already expanded
+                    # print("agent.has_expanded")
                     expanded_agents.append(agent)
                 else:
                     agent_prompts = agent.create_prompt()
@@ -110,6 +111,9 @@ class Solver(BaseModel):
             else:
                 invalid_agents.append(agent)
         # print(prompts)
+        # print(rewards)
+        # print(prompts_span)
+        # stop
         return prompts, prompts_span, valid_agents, invalid_agents, expanded_agents, rewards
 
 
@@ -155,7 +159,7 @@ class Solver(BaseModel):
         prompts = []
         prompts_span = [0]
         for agent in agents:
-            agent_prompts = agent.create_prompt(is_value_only=True)   # 
+            agent_prompts = agent.create_prompt(is_value_only=True)   # only create prompts for candidate_nodes 
             prompts.extend(agent_prompts)
             prompts_span.append(prompts_span[-1] + len(agent_prompts))
         # print(agent_prompts)
@@ -232,7 +236,8 @@ class Solver(BaseModel):
     
     def solve(self, agents: List[BaseTree], saved_jsonl_file: str, cur_data: List[Dict[str, Any]]):
 
-        # max_agent_steps is number of rollouts or simulations (default value is 12) 
+        # max_agent_steps is number of rollouts or simulations 
+        #    (default value is 12, the paper uses 4 rollouts for test-time compute) 
         for rollout in tqdm(range(self.max_agent_steps), desc="Rollout Processing", disable=True):
             # Initialize the initial search starting point of agents, 
             # and the initial point of each rollout is root
@@ -241,13 +246,14 @@ class Solver(BaseModel):
                 agent.rollout_idx = rollout
                 # print(agent.current_nodes)
 
-            for step in range(self.config.max_depth):
+            # max_depth leads to max number of steps can be generated (# default value is 16, same in the paper).
+            for step in range(self.config.max_depth):  
                 print("-----------------Current Rollout: ", rollout, "-----------------")
                 print("-----------------Current Step: ", step, "-----------------")
 
-                # print("\n-> current_agents")
-                # for agent in agents:
-                #     print(agent.current_nodes)
+                print("\n-> current_agents")
+                for agent in agents:
+                    print(agent.current_nodes)
 
                 # step expansion
                 
@@ -301,10 +307,20 @@ class Solver(BaseModel):
         
                 <|start_header_id|>assistant<|end_header_id>
                 """
+
                 
                 prompts, prompts_span, valid_agents, invalid_agents, expanded_agents, valid_rewards = self.generate_preprocess(agents)
-                # print("\n-> prompts")
-                # print(prompts)
+                # Notes: 
+                #  It is different from the Mario repo, which does't have the expanded_agents and valid_rewards
+                #  I'm not so sure how valid_rewards are assigned to the nodes. 
+                #  The valid_rewards does not seem to be the PRM scores.
+                #  The default value of valid_rewards are 0
+                #  I conjecture valid_rewards are only used in training.
+                #  where we can get rewards from the tree built from previous round 
+                
+                print("\n-> llm prompts")
+                print(prompts)
+                print(valid_rewards)
 
                 # print("\n-> valid_agents")
                 # for agent in valid_agents:
@@ -318,14 +334,17 @@ class Solver(BaseModel):
                 # for agent in expanded_agents:
                 #     print(agent.current_nodes)
 
-                # check if whether there are still agents that are valid for expansion or already expanded and need to do selection step 
+                # check if there are still agents that are 
+                #  (i) valid for expansion 
+                #  or (ii) already expanded and require the selection step 
                 if len(valid_agents + expanded_agents) < 1:
                     break
                 
-                
+
+                # generate batch of step nodes, the default value of batch_size is 32
                 outputs = self.llm(prompts, self.generate_sampling_params)
-                # print("step_expansion outputs")
-                # print(outputs) # it does not seem to generate good solutions 
+                print("step_expansion outputs")
+                print(outputs)  
                 
                 for output, reward in zip(outputs, valid_rewards): # attach reward to prevent repeat rewarding
                     output.value_estimate = reward
@@ -335,7 +354,6 @@ class Solver(BaseModel):
                 # update leaf nodes of the current_nodes
                 # add new generated nodes (not already a child and have visitation less than one) as children of the current_nodes
                 valid_agents = self.generate_postprocess(reconstructed_outputs, valid_agents)
-
                 # step evaluation
                 
                 # what are the differences between this llm_prompts and rm_prompts?
@@ -346,23 +364,29 @@ class Solver(BaseModel):
                 # example of prompts: 
                 # {'prefix': '', 'text': "<|user|>:\nConvert the point $(0,3)$ in rectangular coordinates to polar coordinates.  Enter your answer in the form $(r,\\theta),$ where $r > 0$ and $0 \\le \\theta < 2 \\pi.$\n\n<|assistant|>: Let's think step by step and solve the problem with code."} 
                 prompts, prompts_span = self.value_preprocess(valid_agents)
+                print("\n-> value prompts")
                 print(prompts)
                 
                 if self.need_value_func:  # always True 
                     # todo: check how the reward model works
                     outputs = self.reward_model(prompts=prompts)
+                    print("\n-> value outputs")
+                    print(outputs)
                     reconstructed_outputs = [outputs[bos_idx : eos_idx] for bos_idx, eos_idx in zip(prompts_span, prompts_span[1:])]
-                    # print(reconstructed_outputs)
                 else:
                     # print("False")
                     reconstructed_outputs = [None] * (len(prompts_span) - 1)
                 
                 # selection
                 # select the next current_nodes for expansion
-                # if no further current nodes remain for exploration 
-                #     (i.e. the current_nodes consists a terminal node or its children are terminal nodes), 
+                # if no further nodes can be selected for next expansion 
+                #     (i.e. the current_nodes[0] is a terminal node or its children are terminal nodes), 
                 #     the rollout is finished. 
+                print("\n-> valid_agents")
                 valid_agents = self.value_postprocess(reconstructed_outputs, valid_agents)
+                print("\n-> expanded_agents")
+                for agent in expanded_agents:
+                    print(agent.current_nodes)
                 expanded_agents = self.value_postprocess([None] * len(expanded_agents), expanded_agents) # for expanded agents, just do selection step
 
                 # print("\n-> invalid_agents")

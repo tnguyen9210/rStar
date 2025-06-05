@@ -18,6 +18,15 @@ from rstar_deepthink.constants import (
 from .tree import BaseTree, code_execution
 from .beam_search import BS
 
+is_disable = False
+
+def pwarn(text, disable=False):
+    if not disable:
+        print(text)
+
+def pinfo(text, disable=False):
+    if not disable:
+        print(text)
 
 class MCTS(BS):
     search_node: Type[BaseNode] = None
@@ -52,13 +61,16 @@ class MCTS(BS):
         if from_root:
             start_node = self.root
         else:
-            start_node = self.search_node
+            start_node = self.search_node   # the search node is the current_nodes[0] 
+                                            #     specified in select_next_step function
         # select a child node
         node = start_node
         if node is None: return None
 
-        # Start from the current_node, explore thee non-terminal children with UCT 
-        # Note: This step is different from the Mario code, where the selection process always starts from the root.
+        # from the start_node, explore the non-terminal children with UCT 
+        # notes: 
+        #    this step is different from the Mario code, 
+        #       where the selection process always starts from the root.
         if node.has_children() or node.is_terminal: # an potentiall error here "or node.is_terminal" may not be correct, 
                                                     #    should be "and not node.is_terminal"?
             next_node = self.select_child(node)     # To encourage exploration, select from non-terminal children
@@ -69,7 +81,7 @@ class MCTS(BS):
 
         # The selected node is None if 
         #   (i) it is a terminal node
-        #   (ii) or all of its childrens are terminal nodes
+        #   or (ii) all of its childrens are terminal nodes
         # The selected node is not None if 
         #   it is a non-terminal leaf node that have no children 
         return None if (node is None or node.is_terminal) else node
@@ -185,14 +197,28 @@ class MCTS(BS):
 
 
     def select_next_step(self, outputs=None, from_root=False) -> None:
-        # If self.current_nodes is None (i.e., cannot select next node for exploration), the current rollout stops 
+        '''
+        Update and backup node values from the self.candidate_nodes 
+        Then, select a next node for expansion 
+        '''
+        pinfo(f"\n-> select_next_step")
+        # if self.current_nodes is None (i.e., cannot select next node for exploration), the current rollout stops 
         # What’s a better way to describe the cases where this happens?
         self.search_node = self.current_nodes[0] if self.current_nodes else None
+        pwarn(self.search_node)
         self.current_nodes = []
-        if outputs:
-            for candidate_node, output in zip(self.candidate_nodes, outputs):
-                if candidate_node.is_terminal and self.config.is_sampling:
+
+        if outputs:        # This is False for expanded_agends, which skips backup operation, go to selection operation  
+            pwarn(f"outputs.yes")
+            # only update/backup from the self.candidate_nodes
+            for candidate_node, output in zip(self.candidate_nodes, outputs): # this must match since we use PRM to scores candidate_nodes
+                pwarn(candidate_node)
+                pwarn(output.value_estimate)
+                pwarn(candidate_node.is_terminal)
+                
+                if candidate_node.is_terminal and self.config.is_sampling: # what is self.config.is_sampling for?
                     continue
+                
                 value_estimate = output.value_estimate if output.value_estimate is not None else self.config.negative_reward
                 if output.value_estimate is None:
                     candidate_node.is_terminal = True
@@ -203,8 +229,10 @@ class MCTS(BS):
                 # NO_VALID_CHILD = "Fail to generate parsable text for next step."
                 # where is candidate_node.state["final_answer"] computed? 
                 if candidate_node.is_terminal and candidate_node.state["final_answer"]:
+                    pwarn("is_terminal.yes")
                     # for terminal node: update_recursive
                     if candidate_node.state["final_answer"] in [NO_VALID_CHILD, TOO_MANY_STEPS, TOO_MANY_CODE_ERRORS]:
+                        pwarn("invalid_final_answer.yes")
                         candidate_node.update(self.config.negative_reward)
                     else:
                         # save intermediate metric. what does this step actually do?
@@ -220,11 +248,13 @@ class MCTS(BS):
 
                 if self.__class__.is_valid_final_answer_node(candidate_node):
                     self.final_answer_nodes.append(candidate_node)
+                    
         selection_node = self.selection(from_root=from_root)
+        pwarn(selection_node)
 
         # The selected node is None if 
         #   (i) it is a terminal node
-        #   (ii) or all of its childrens are terminal nodes
+        #   or (ii) all of its childrens are terminal nodes
         # The selected node is not None if 
         #   it is a non-terminal leaf node that have no children 
         # If the selected node is None, there is no further exploration, the current rollout stops 
@@ -234,23 +264,33 @@ class MCTS(BS):
     
     def generate_next_step(self, outputs: List[RequestOutput]) -> None:
         self.candidate_nodes = []
+        pinfo(f"\n-> generate_next_step")
+        cnt = -1
         for current_node, output in zip(self.current_nodes, outputs):
+            cnt += 1
+            pwarn(cnt)
+            pwarn(current_node)
+            pwarn(output)
+            pwarn(output.value_estimate)
             value_estimate = output.value_estimate
             if value_estimate is not None:  
-                self.expand_node(output.outputs, current_node)
+                self.expand_node(output.outputs, current_node)   # create child nodes from outputs
             else:   # when does it happen? 
                 print("generate_next_step value_estimate is None")
                 print(current_node)
                 value_estimate = self.config.negative_reward
                 current_node.is_terminal = True
 
-            # update leaf nodes 
-            # add new generated nodes (not already children and have visitation less than one) as children of current node
-            if self.config.update_leaf_value:           # True 
+            # update leaf nodes
+            # make self.candidate_nodes
+            #     only add generated nodes to self.candidate_nodes if they haven't been visited before 
+            #     (i.e., their visiation counts are 0)
+            if self.config.update_leaf_value:           # always True 
                 # if need update leaf node value, just append the node to candidate_nodes, will update the value in select_next_step()
                 for value_node in current_node.children:
                     if value_node not in self.candidate_nodes and value_node.visit_count() < 1:
                         self.candidate_nodes.append(value_node) 
+            pwarn(self.candidate_nodes)
                     
                     
     def return_states(self) -> Dict[str, Union[Any, Dict[str, str]]]:

@@ -10,8 +10,8 @@ result_unwrap: "rstar"
 step_delim: "\n"
 stop: ["<end_of_step>", "<end_of_code>", "<end_of_answer>"] # "<end_of_step>",
 max_depth: 16
-n_generate_sample: 16
-best_of: 32
+n_generate_sample: 2
+best_of: 2
 is_sampling: False
 iterations: 2
 max_tokens: 2048

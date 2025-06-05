@@ -90,10 +90,13 @@ class BS(BaseTree):
         if is_value_only, the prompt is used to produce value estimate.
         """
         prompts = []
-        print("current_nodes")
-        print(self.current_nodes)
-        print("candidate_nodes")
-        print(self.candidate_nodes)
+        # print("current_nodes")
+        # print(self.current_nodes)
+        # print("candidate_nodes")
+        # print(self.candidate_nodes)
+    
+        # Notes: we only use PRM to score the candidate nodes (new generated nodes that haven't seen before)
+        #    The candidate_nodes are created in the generate_next_step function in mcts.py
         current_nodes = self.candidate_nodes if is_value_only else self.current_nodes
         for current_node in current_nodes:
             if not is_value_only and self.is_ignored_node(current_node):
